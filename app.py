@@ -154,28 +154,33 @@ else:
 # ---------- Pie chart: Portfolio allocation ----------
 import matplotlib.pyplot as plt
 
-alloc = shown[["ticker", "value_base"]].dropna()
-if not alloc.empty and alloc["value_base"].sum() > 0:
-    # Aggrega le posizioni piccole in "Other" (<3%)
-    alloc = alloc.groupby("ticker", as_index=False)["value_base"].sum()
-    total_val_for_pie = alloc["value_base"].sum()
-    alloc["weight_pct"] = alloc["value_base"] / total_val_for_pie * 100
+# Mostra il grafico solo se ci sono dati nella tabella
+if 'shown' in locals() and not shown.empty:
+    alloc = shown[["ticker", "value_base"]].dropna()
+    if not alloc.empty and alloc["value_base"].sum() > 0:
+        # Aggrega le posizioni piccole in "Other" (<3%)
+        alloc = alloc.groupby("ticker", as_index=False)["value_base"].sum()
+        total_val_for_pie = alloc["value_base"].sum()
+        alloc["weight_pct"] = alloc["value_base"] / total_val_for_pie * 100
 
-    major = alloc[alloc["weight_pct"] >= 3].copy()
-    minor = alloc[alloc["weight_pct"] < 3].copy()
-    if not minor.empty:
-        other_row = pd.DataFrame([{"ticker": "Other", "value_base": minor["value_base"].sum(),
-                                   "weight_pct": minor["weight_pct"].sum()}])
-        alloc_plot = pd.concat([major, other_row], ignore_index=True)
-    else:
-        alloc_plot = major
+        major = alloc[alloc["weight_pct"] >= 3].copy()
+        minor = alloc[alloc["weight_pct"] < 3].copy()
+        if not minor.empty:
+            other_row = pd.DataFrame([{
+                "ticker": "Other",
+                "value_base": minor["value_base"].sum(),
+                "weight_pct": minor["weight_pct"].sum()
+            }])
+            alloc_plot = pd.concat([major, other_row], ignore_index=True)
+        else:
+            alloc_plot = major
 
-    labels = [f'{t} ({w:.1f}%)' for t, w in zip(alloc_plot["ticker"], alloc_plot["weight_pct"])]
-    fig, ax = plt.subplots()
-    ax.pie(alloc_plot["value_base"], labels=labels, autopct='%1.1f%%', startangle=90)
-    ax.axis('equal')
-    st.subheader("Allocation by position")
-    st.pyplot(fig)
+        labels = [f'{t} ({w:.1f}%)' for t, w in zip(alloc_plot["ticker"], alloc_plot["weight_pct"])]
+        fig, ax = plt.subplots()
+        ax.pie(alloc_plot["value_base"], labels=labels, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')
+        st.subheader("Allocation by position")
+        st.pyplot(fig)
 else:
     st.info("Add positions to see the allocation chart.")
 
